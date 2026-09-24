@@ -8,6 +8,7 @@ def parser(file_path) -> MapData:
         road_list = {}
         drones = 0
         line_num = 0
+        metadata_dict = {}
         for line in file:
             line_num += 1
             clean_line = line.strip()
@@ -28,10 +29,6 @@ def parser(file_path) -> MapData:
             elif prefix in ("hub:", "start_hub:", "end_hub:"):
                 coordinates_x = int(parts[2])
                 coordinates_y = int(parts[3])
-                if metadata_dict:
-                metadata_dict["zone"] = "normal"
-                metadata_dict["color"] = "none"
-                metadata_dict["max_drones"] = 1
                 my_room = Zone(name=parts[1], role=parts[0],
                                metadata=metadata_dict, x=coordinates_x,
                                y=coordinates_y)
