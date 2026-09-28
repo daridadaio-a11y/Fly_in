@@ -1,0 +1,8 @@
+# 8行目の接続が7行目と重複する
+nb_drones: 2
+start_hub: start 0 0
+hub: middle 1 0
+end_hub: goal 2 0
+connection: start-middle
+connection: middle-goal
+connection: middle-start

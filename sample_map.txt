@@ -1,0 +1,9 @@
+# Parser の動作確認用マップ
+ nb_drones: 2
+
+start_hub: start 0 0 [zone=normal color=blue]
+hub: middle 1 0 [zone=normal color=green max_drones=2]
+end_hub: goal 2 0 [zone=normal color=red]
+
+connection: start-middle [max_link_capacity=2]
+connection: middle-goal [max_link_capacity=2]
