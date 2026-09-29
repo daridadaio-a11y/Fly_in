@@ -7,6 +7,7 @@
 from models import Zone, Connection, MapData
 from errors import MapParseError
 
+
 class Parser:
     """1つのマップファイルを解析し、MapDataを組み立てるクラス。
 
@@ -21,7 +22,6 @@ class Parser:
             file_path: 読み込むマップファイルのパス。
         """
         self.file_path = file_path
-
 
     def parse(self) -> MapData:
         """マップファイル全体を解析してMapDataを返す。
@@ -38,8 +38,8 @@ class Parser:
               MapParseError: マップの書式や内容が不正な場合。
         """
         self.total_drones = 0
-        self.zones = {}
-        self.connection = {}
+        self.zones: dict[str, Zone] = {}
+        self.connections: dict[tuple[str, str], Connection] = {}
         self._drone_count_seen = False
         self._start_hub = False
         self._end_hub = False
@@ -51,8 +51,7 @@ class Parser:
             self._validate()
             return MapData(total_drones=self.total_drones,
                            zones=self.zones,
-                           connections=self.connection)
-
+                           connections=self.connections)
 
     def _parse_line(self, line: str, line_num: int) -> None:
         """マップファイルの1行を判別し、対応する解析処理へ振り分ける。
@@ -75,11 +74,17 @@ class Parser:
         content, metadata_text = self._split_metadata(clean_line, line_num)
         parts = content.split()
         if not parts:
-            raise MapParseError(line_num, "Expected a directive before metadata.")
+            raise MapParseError(
+                line_num,
+                "Expected a directive before metadata."
+                )
         prefix = parts[0]
         if not self._drone_count_seen and prefix != "nb_drones:":
-            raise MapParseError(line_num, "The first non-comment line must define nb_drones.")
-        if prefix  == "nb_drones:":
+            raise MapParseError(
+                line_num,
+                "The first non-comment line must define nb_drones."
+                )
+        if prefix == "nb_drones:":
             if metadata_text:
                 raise MapParseError(line_num, "nb_drones cannot have metadata.")
             self._parse_drone_count(parts, line_num)
@@ -127,14 +132,20 @@ class Parser:
             line_num: エラー表示に使用する行番号。
         """
         if self._drone_count_seen:
-            raise MapParseError(line_num, "nb_drones is defined more than once.")
+            raise MapParseError(
+                line_num,
+                "nb_drones is defined more than once."
+                )
         if len(parts) != 2:
             raise MapParseError(line_num, "Expected 'nb_drones: <number>'.")
         try:
             total_drones = int(parts[1])
         except ValueError as e:
-            raise MapParseError(line_num, "The drone count must be an integer.") from e
-        if total_drones < 1 :
+            raise MapParseError(
+                line_num,
+                "The drone count must be an integer."
+                ) from e
+        if total_drones < 1:
             raise MapParseError(line_num, "The drone count must be positive.")
         self.total_drones = total_drones
         self._drone_count_seen = True
@@ -157,37 +168,57 @@ class Parser:
         """
         if len(parts) != 4:
             raise MapParseError(line_num, "Expected '<hub type> <name> <x> <y>'.")
-        role, name = parts[0],parts[1]
+        role, name = parts[0], parts[1]
         if "-" in name:
-            raise MapParseError(line_num, f"The zone name '{name}' cannot contain '-'.")
+            raise MapParseError(
+                line_num,
+                f"The zone name '{name}' cannot contain '-'."
+                )
         if name in self.zones:
-            raise MapParseError(line_num, f"The zone name '{name}' is already defined.")
+            raise MapParseError(
+                line_num,
+                f"The zone name '{name}' is already defined."
+                )
         try:
             x, y = int(parts[2]), int(parts[3])
         except ValueError as e:
-            raise MapParseError(line_num, "Zone coordinates must be integers.")
-        if role  == "start_hub:" or role == "end_hub:":
+            raise MapParseError(
+                line_num,
+                "Zone coordinates must be integers."
+                ) from e
+        if role == "start_hub:" or role == "end_hub:":
             if role == "start_hub:":
                 if self._start_hub:
-                    raise MapParseError(line_num, f"{role.removesuffix(':')} is defined more than once.")
+                    raise MapParseError(
+                        line_num,
+                        f"{role.removesuffix(':')} is defined more than once."
+                        )
                 self._start_hub = True
             elif role == "end_hub:":
                 if self._end_hub:
-                    raise MapParseError(line_num, f"{role.removesuffix(':')} is defined more than once.")
+                    raise MapParseError(
+                        line_num,
+                        f"{role.removesuffix(':')} is defined more than once."
+                        )
                 self._end_hub = True
             metadata = self._parse_metadata(
                 metadata_text,
                 {"zone": "normal", "color": "none"},
                 line_num,
+                ignored_key="max_drones",
             )
         else:
             metadata = self._parse_metadata(
-            metadata_text,
-            {"zone": "normal", "color": "none", "max_drones": 1},
-            line_num,
+                metadata_text,
+                {"zone": "normal", "color": "none", "max_drones": 1},
+                line_num,
             )
-        if metadata["zone"] not in ("normal", "blocked", "restricted", "priority"):
-            raise MapParseError(line_num, f"Invalid zone type '{metadata['zone']}'.")
+        if metadata["zone"] not in (
+                "normal", "blocked", "restricted", "priority"):
+            raise MapParseError(
+                line_num,
+                f"Invalid zone type '{metadata['zone']}'."
+                )
 
         self.zones[name] = Zone(
             name=name,
@@ -196,7 +227,6 @@ class Parser:
             x=x,
             y=y,
         )
-        
 
     def _parse_connection(
         self,
@@ -215,12 +245,17 @@ class Parser:
             metadata_text: 角括弧内に書かれたメタデータ文字列。
             line_num: エラー表示に使用する行番号。
         """
-        
         if len(parts) != 2:
-            raise MapParseError(line_num, "Expected 'connection: <zone1>-<zone2>'.")
+            raise MapParseError(
+                line_num,
+                "Expected 'connection: <zone1>-<zone2>'."
+                )
         endpoints = parts[1].split("-")
         if len(endpoints) != 2 or not all(endpoints):
-            raise MapParseError(line_num, "A connection needs exactly two zones.")
+            raise MapParseError(
+                line_num,
+                "A connection needs exactly two zones."
+                )
         zone1, zone2 = endpoints
         if zone1 == zone2:
             raise MapParseError(line_num, "A zone cannot connect to itself.")
@@ -229,15 +264,20 @@ class Parser:
         if zone2 not in self.zones:
             raise MapParseError(line_num, f"Zone '{zone2}' is not defined.")
 
-        connection_key = tuple(sorted((zone1, zone2)))
-        if connection_key in self.connection:
-            raise MapParseError(line_num, f"The connection '{zone1} - {zone2}' is a duplicate.")
+        if zone1 < zone2:
+            connection_key = (zone1, zone2)
+        else:
+            connection_key = (zone2, zone1)
+        if connection_key in self.connections:
+            raise MapParseError(
+                line_num,
+                f"The connection '{zone1} - {zone2}' is a duplicate.")
         metadata = self._parse_metadata(
             metadata_text,
             {"max_link_capacity": 1},
             line_num,
         )
-        self.connection[connection_key] = Connection(
+        self.connections[connection_key] = Connection(
             zone1=zone1,
             zone2=zone2,
             metadata=metadata,
@@ -248,6 +288,7 @@ class Parser:
         metadata_text: str,
         defaults: dict,
         line_num: int,
+        ignored_key: str | None = None
     ) -> dict:
         """``key=value``形式のメタデータを辞書へ変換する。
 
@@ -262,36 +303,52 @@ class Parser:
         Returns:
             デフォルト値とファイル内の指定を統合したメタデータ辞書。
         """
-        metadata = defaults
+        metadata = defaults.copy()
         seen_keys = set()
         if not metadata_text:
-            return defaults
+            return metadata
         for item in metadata_text.split():
             if item.count("=") != 1:
-                raise MapParseError(line_num, f"Invalid metadata item '{item}'.")
+                raise MapParseError(
+                    line_num,
+                    f"Invalid metadata item '{item}'."
+                    )
             key, value = item.split("=", maxsplit=1)
+            if key == ignored_key:
+                continue
             if value == "":
-                raise MapParseError(line_num, f"Metadata '{key}' must have a value.")
+                raise MapParseError(
+                    line_num,
+                    f"Metadata '{key}' must have a value."
+                    )
             if key not in defaults:
                 raise MapParseError(line_num, f"Unknown metadata key '{key}'.")
             if key in seen_keys:
-                raise MapParseError(line_num, f"Metadata key '{key}' is duplicated.")
+                raise MapParseError(
+                    line_num,
+                    f"Metadata key '{key}' is duplicated."
+                    )
             seen_keys.add(key)
 
             if key in ("max_drones", "max_link_capacity"):
                 try:
-                    value = int(value)
+                    number = int(value)
                 except ValueError as e:
-                    raise MapParseError(line_num, f"Metadata '{key}' must be an integer.") from e
-                if value < 1:
-                    raise MapParseError(line_num, f"Metadata '{key}' must be positive.")
-            metadata[key] = value
+                    raise MapParseError(
+                        line_num,
+                        f"Metadata '{key}' must be an integer."
+                        ) from e
+                if number < 1:
+                    raise MapParseError(
+                        line_num,
+                        f"Metadata '{key}' must be positive.",
+                    )
+                metadata[key] = number
+            else:
+                metadata[key] = value
         return metadata
-                
 
-
-
-    def _validate(self,) -> None:
+    def _validate(self) -> None:
         """全行の解析後に、マップ全体の必須条件を検証する。
 
         ドローン数が定義されていること、start_hubとend_hubがそれぞれ
@@ -304,5 +361,3 @@ class Parser:
             raise MapParseError(None, "Exactly one start_hub is required.")
         elif not self._end_hub:
             raise MapParseError(None, "Exactly one end_hub is required.")
-
-

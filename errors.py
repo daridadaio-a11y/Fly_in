@@ -1,7 +1,8 @@
 
 class MapParseError(Exception):
-    def __init__(self, line_num, reason) -> None:
-        if line_num:
-            super().__init__(f"Line {line_num}: {reason}")
-        elif line_num is None:
-            super().__init__(f"{reason}")
+    def __init__(self, line_num: int | None, reason: str) -> None:
+        if line_num is None:
+            message = reason
+        else:
+            message = (f"Line {line_num}: {reason}")
+        super().__init__(message)

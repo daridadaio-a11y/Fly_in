@@ -10,13 +10,13 @@ class Parser:
         self.file_path = file_path
         self.total_drones = 0
         self.zones = {}
-        self.connections = {}
+        s = {}
         self._drone_count_seen = False
 
     def parse(self) -> MapData:
         self.total_drones = 0
         self.zones = {}
-        self.connections = {}
+        s = {}
         self._drone_count_seen = False
 
         with open(self.file_path, "r", encoding="utf-8") as file:
@@ -27,7 +27,7 @@ class Parser:
         return MapData(
             total_drones=self.total_drones,
             zones=self.zones,
-            connections=self.connections,
+            connections=s,
         )
 
     def _parse_line(self, line: str, line_num: int) -> None:
@@ -153,7 +153,7 @@ class Parser:
             raise MapParseError(line_num, f"Zone '{zone2}' is not defined.")
 
         connection_key = tuple(sorted((zone1, zone2)))
-        if connection_key in self.connections:
+        if connection_key in s:
             raise MapParseError(
                 line_num, f"The connection '{zone1} - {zone2}' is a duplicate."
             )
@@ -161,7 +161,7 @@ class Parser:
         metadata = self._parse_metadata(
             metadata_text, {"max_link_capacity": 1}, line_num
         )
-        self.connections[connection_key] = Connection(
+        s[connection_key] = Connection(
             zone1=zone1,
             zone2=zone2,
             metadata=metadata,
