@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ダイクストラ法の動き</title>
+  <style>
+    :root { --ink:#192235; --muted:#64748b; --line:#cbd5e1; --blue:#2563eb; --green:#16a34a; --amber:#d97706; --bg:#f5f7fb; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--bg); font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif; line-height:1.65; }
+    main { width:min(1080px,calc(100% - 32px)); margin:36px auto; }
+    h1 { margin:0; font-size:clamp(26px,4vw,42px); }
+    .lead { color:var(--muted); margin:6px 0 24px; }
+    .grid { display:grid; grid-template-columns:1.4fr 1fr; gap:20px; }
+    .card { background:white; border:1px solid #e2e8f0; border-radius:18px; padding:22px; box-shadow:0 8px 30px #0f172a0d; }
+    h2 { margin:0 0 14px; font-size:18px; }
+    svg { width:100%; height:auto; display:block; }
+    .edge { stroke:var(--line); stroke-width:5; }
+    .edge.active { stroke:var(--blue); }
+    .node circle { fill:white; stroke:#94a3b8; stroke-width:4; }
+    .node text { text-anchor:middle; font-size:16px; font-weight:750; fill:var(--ink); }
+    .node.current circle { fill:#dbeafe; stroke:var(--blue); }
+    .node.done circle { fill:#dcfce7; stroke:var(--green); }
+    .node.goal circle { stroke:var(--amber); }
+    .cost { font-size:13px; fill:var(--muted); font-weight:700; }
+    .status { min-height:78px; padding:14px 16px; background:#eff6ff; border-left:5px solid var(--blue); border-radius:10px; }
+    .controls { display:flex; gap:10px; margin-top:16px; }
+    button { border:0; border-radius:10px; padding:10px 16px; font:inherit; font-weight:700; cursor:pointer; }
+    button.primary { background:var(--blue); color:white; }
+    button.secondary { background:#e2e8f0; color:var(--ink); }
+    button:disabled { opacity:.4; cursor:not-allowed; }
+    table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+    th,td { padding:9px 8px; border-bottom:1px solid #e2e8f0; text-align:left; }
+    th { color:var(--muted); font-size:13px; }
+    tr.changed { background:#fef3c7; }
+    code { background:#eef2ff; padding:2px 6px; border-radius:5px; }
+    .queue { display:flex; flex-wrap:wrap; gap:8px; min-height:37px; }
+    .pill { padding:6px 10px; border-radius:999px; background:#e0e7ff; color:#3730a3; font-weight:700; }
+    .rule { margin-top:20px; }
+    .formula { padding:16px; border-radius:12px; background:#111827; color:#f8fafc; font-family:ui-monospace,SFMono-Regular,monospace; overflow:auto; }
+    @media (max-width:760px) { .grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>ダイクストラ法は「足しながら覚える」</h1>
+  <p class="lead">startから毎回数え直さず、各ゾーンまでの最小合計を保存して次の1回分だけ足します。</p>
+
+  <div class="grid">
+    <section class="card">
+      <h2>経路の例</h2>
+      <svg viewBox="0 0 650 360" role="img" aria-label="startからAとBに分岐しgoalへ向かう経路">
+        <line id="e-sa" class="edge" x1="95" y1="180" x2="260" y2="85"/>
+        <line id="e-sb" class="edge" x1="95" y1="180" x2="260" y2="275"/>
+        <line id="e-ag" class="edge" x1="260" y1="85" x2="535" y2="180"/>
+        <line id="e-bc" class="edge" x1="260" y1="275" x2="395" y2="275"/>
+        <line id="e-cg" class="edge" x1="395" y1="275" x2="535" y2="180"/>
+        <text class="cost" x="163" y="112">2ターン</text>
+        <text class="cost" x="163" y="260">1ターン</text>
+        <text class="cost" x="390" y="112">2ターン</text>
+        <text class="cost" x="312" y="263">1ターン</text>
+        <text class="cost" x="460" y="257">1ターン</text>
+        <g id="n-start" class="node"><circle cx="95" cy="180" r="42"/><text x="95" y="186">start</text></g>
+        <g id="n-a" class="node"><circle cx="260" cy="85" r="38"/><text x="260" y="91">A</text></g>
+        <g id="n-b" class="node"><circle cx="260" cy="275" r="38"/><text x="260" y="281">B</text></g>
+        <g id="n-c" class="node"><circle cx="395" cy="275" r="38"/><text x="395" y="281">C</text></g>
+        <g id="n-goal" class="node goal"><circle cx="535" cy="180" r="42"/><text x="535" y="186">goal</text></g>
+      </svg>
+      <div id="status" class="status"></div>
+      <div class="controls">
+        <button id="prev" class="secondary">← 前へ</button>
+        <button id="next" class="primary">次へ →</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>保存している合計（distances）</h2>
+      <table>
+        <thead><tr><th>ゾーン</th><th>startからの最小候補</th><th>直前</th></tr></thead>
+        <tbody id="distanceRows"></tbody>
+      </table>
+      <h2 style="margin-top:22px">次に調べる候補（ヒープ）</h2>
+      <div id="queue" class="queue"></div>
+    </section>
+  </div>
+
+  <section class="card rule">
+    <h2>毎回する計算はこれだけ</h2>
+    <div class="formula">新しい候補 = distances[現在地] + 次のゾーンへの移動コスト</div>
+    <p><strong>新しい候補が保存中の値より小さいときだけ</strong>、<code>distances</code> と <code>previous</code> を更新します。ゴールを発見した瞬間には終了せず、ゴールが最小候補としてヒープから取り出されたときに確定します。</p>
+  </section>
+</main>
+<script>
+  const names = ["start", "A", "B", "C", "goal"];
+  const steps = [
+    { current:"start", done:[], edges:[], d:{start:0,A:"∞",B:"∞",C:"∞",goal:"∞"}, p:{}, q:[[0,"start"]], text:"① 最初はstartだけが0。ほかは、まだ行き方が分からないので∞です。" },
+    { current:"start", done:["start"], edges:["e-sa","e-sb"], d:{start:0,A:2,B:1,C:"∞",goal:"∞"}, p:{A:"start",B:"start"}, q:[[1,"B"],[2,"A"]], changed:["A","B"], text:"② startの隣を調べます。Aまで2、Bまで1を保存。次は合計が小さいBです。" },
+    { current:"B", done:["start","B"], edges:["e-sb","e-bc"], d:{start:0,A:2,B:1,C:2,goal:"∞"}, p:{A:"start",B:"start",C:"B"}, q:[[2,"A"],[2,"C"]], changed:["C"], text:"③ Bまでの保存値1に、B→Cの1を足します。Cまでの合計は2です。" },
+    { current:"A", done:["start","B","A"], edges:["e-sa","e-ag"], d:{start:0,A:2,B:1,C:2,goal:4}, p:{A:"start",B:"start",C:"B",goal:"A"}, q:[[2,"C"],[4,"goal"]], changed:["goal"], text:"④ A経由でgoalを発見し、合計4を保存します。ただし、まだ終了しません。" },
+    { current:"C", done:["start","B","A","C"], edges:["e-sb","e-bc","e-cg"], d:{start:0,A:2,B:1,C:2,goal:3}, p:{A:"start",B:"start",C:"B",goal:"C"}, q:[[3,"goal"],[4,"goal（古い候補）"]], changed:["goal"], text:"⑤ Cまでの2にC→goalの1を足すと3。保存中の4より短いので、goalを3へ更新します。" },
+    { current:"goal", done:names, edges:["e-sb","e-bc","e-cg"], d:{start:0,A:2,B:1,C:2,goal:3}, p:{A:"start",B:"start",C:"B",goal:"C"}, q:[[4,"goal（古いので無視）"]], text:"⑥ 最小候補としてgoal(3)が取り出されました。最短は start → B → C → goal、合計3ターンです。" }
+  ];
+  let index = 0;
+  const status = document.querySelector("#status");
+  const rows = document.querySelector("#distanceRows");
+  const queue = document.querySelector("#queue");
+  const prev = document.querySelector("#prev");
+  const next = document.querySelector("#next");
+  function render() {
+    const s = steps[index];
+    status.textContent = s.text;
+    document.querySelectorAll(".node").forEach(n => n.classList.remove("current","done"));
+    document.querySelectorAll(".edge").forEach(e => e.classList.remove("active"));
+    s.done.forEach(n => document.querySelector(`#n-${n.toLowerCase()}`).classList.add("done"));
+    document.querySelector(`#n-${s.current.toLowerCase()}`).classList.add("current");
+    s.edges.forEach(e => document.querySelector(`#${e}`).classList.add("active"));
+    rows.innerHTML = names.map(n => `<tr class="${(s.changed && s.changed.includes(n)) ? "changed" : ""}"><td>${n}</td><td>${s.d[n]}</td><td>${(s.p[n] === undefined ? "—" : s.p[n])}</td></tr>`).join("");
+    queue.innerHTML = s.q.length ? s.q.map(([d,n]) => `<span class="pill">(${d}, ${n})</span>`).join("") : "<span>空</span>";
+    prev.disabled = index === 0;
+    next.disabled = index === steps.length - 1;
+  }
+  prev.addEventListener("click", () => { if (index > 0) { index--; render(); } });
+  next.addEventListener("click", () => { if (index < steps.length - 1) { index++; render(); } });
+  render(); for (let testStep = 0; testStep < 20; testStep++) next.click();
+</script>
+</body>
+</html>

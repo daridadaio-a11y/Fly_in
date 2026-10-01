@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>大きな例で見るダイクストラ法</title>
+  <style>
+    :root{--ink:#172033;--muted:#64748b;--blue:#2563eb;--green:#16a34a;--amber:#f59e0b;--line:#cbd5e1;--bg:#f4f7fb}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,"Noto Sans JP",sans-serif;line-height:1.6}
+    main{width:min(1250px,calc(100% - 28px));margin:28px auto} h1{margin:0;font-size:clamp(25px,4vw,42px)} .lead{color:var(--muted);margin:4px 0 20px}
+    .layout{display:grid;grid-template-columns:minmax(560px,1.45fr) minmax(390px,1fr);gap:18px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:20px;box-shadow:0 8px 25px #0f172a0c}
+    h2{margin:0 0 12px;font-size:18px} svg{width:100%;height:auto;display:block}.edge{stroke:var(--line);stroke-width:5}.edge.active{stroke:var(--blue)}
+    .node circle{fill:#fff;stroke:#94a3b8;stroke-width:4}.node text{text-anchor:middle;font-weight:800;fill:var(--ink)}.node.done circle{fill:#dcfce7;stroke:var(--green)}.node.current circle{fill:#dbeafe;stroke:var(--blue)}.node.goal circle{stroke:var(--amber)}.cost{font-size:14px;font-weight:800;fill:#475569}
+    .status{min-height:92px;background:#eff6ff;border-left:5px solid var(--blue);border-radius:10px;padding:13px 15px}.step{font-weight:800;color:var(--blue);margin-bottom:3px}
+    .controls{display:flex;gap:9px;margin-top:14px}button{border:0;border-radius:10px;padding:10px 17px;font:inherit;font-weight:800;cursor:pointer}.primary{color:#fff;background:var(--blue)}.secondary{background:#e2e8f0}button:disabled{opacity:.4;cursor:not-allowed}
+    table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}th,td{padding:7px 6px;border-bottom:1px solid #e2e8f0;text-align:left}th{color:var(--muted)}tr.changed{background:#fef3c7}.update{font-weight:800;color:#b45309}
+    .queue{display:flex;flex-wrap:wrap;gap:7px;min-height:38px}.pill{padding:6px 10px;border-radius:999px;background:#e0e7ff;color:#3730a3;font-weight:750}.stale{background:#fee2e2;color:#991b1b}
+    .legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:8px}.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px}.rule{margin-top:18px}.formula{background:#111827;color:#fff;padding:14px;border-radius:11px;font-family:ui-monospace,monospace;overflow:auto}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}}
+  </style>
+</head>
+<body><main>
+  <h1>大きな分岐で見るダイクストラ法</h1>
+  <p class="lead">保存済みの合計に次の移動コストを足し、短くなったときだけ候補を更新します。</p>
+  <div class="layout">
+    <section class="card">
+      <h2>分岐・合流する経路</h2>
+      <svg viewBox="0 0 850 500" aria-label="startからA B Cへ分岐し、D E FとXを通ってgoalへ至るグラフ">
+        <line id="sa" class="edge" x1="65" y1="250" x2="205" y2="85"/><line id="sb" class="edge" x1="65" y1="250" x2="205" y2="250"/><line id="sc" class="edge" x1="65" y1="250" x2="205" y2="415"/>
+        <line id="ad" class="edge" x1="205" y1="85" x2="385" y2="145"/><line id="ae" class="edge" x1="205" y1="85" x2="385" y2="250"/><line id="bd" class="edge" x1="205" y1="250" x2="385" y2="145"/><line id="be" class="edge" x1="205" y1="250" x2="385" y2="250"/><line id="ce" class="edge" x1="205" y1="415" x2="385" y2="250"/><line id="cf" class="edge" x1="205" y1="415" x2="385" y2="375"/>
+        <line id="dx" class="edge" x1="385" y1="145" x2="585" y2="250"/><line id="ex" class="edge" x1="385" y1="250" x2="585" y2="250"/><line id="fx" class="edge" x1="385" y1="375" x2="585" y2="250"/><line id="xg" class="edge" x1="585" y1="250" x2="780" y2="250"/>
+        <text class="cost" x="120" y="150">2</text><text class="cost" x="126" y="240">1</text><text class="cost" x="120" y="360">2</text><text class="cost" x="290" y="98">2</text><text class="cost" x="286" y="137">1</text><text class="cost" x="290" y="178">2</text><text class="cost" x="290" y="240">3</text><text class="cost" x="290" y="330">1</text><text class="cost" x="290" y="401">1</text><text class="cost" x="485" y="168">3</text><text class="cost" x="480" y="240">1</text><text class="cost" x="480" y="345">2</text><text class="cost" x="678" y="240">1</text>
+        <g id="n-start" class="node"><circle cx="65" cy="250" r="39"/><text x="65" y="256">start</text></g><g id="n-a" class="node"><circle cx="205" cy="85" r="32"/><text x="205" y="91">A</text></g><g id="n-b" class="node"><circle cx="205" cy="250" r="32"/><text x="205" y="256">B</text></g><g id="n-c" class="node"><circle cx="205" cy="415" r="32"/><text x="205" y="421">C</text></g>
+        <g id="n-d" class="node"><circle cx="385" cy="145" r="32"/><text x="385" y="151">D</text></g><g id="n-e" class="node"><circle cx="385" cy="250" r="32"/><text x="385" y="256">E</text></g><g id="n-f" class="node"><circle cx="385" cy="375" r="32"/><text x="385" y="381">F</text></g><g id="n-x" class="node"><circle cx="585" cy="250" r="32"/><text x="585" y="256">X</text></g><g id="n-goal" class="node goal"><circle cx="780" cy="250" r="39"/><text x="780" y="256">goal</text></g>
+      </svg>
+      <div class="legend"><span><i class="dot" style="background:#dbeafe"></i>今回調べる</span><span><i class="dot" style="background:#dcfce7"></i>調査済み</span><span>線上の数字＝移動コスト</span></div>
+      <div id="status" class="status"></div>
+      <div class="controls"><button id="prev" class="secondary">← 前へ</button><button id="next" class="primary">次へ →</button></div>
+    </section>
+    <section class="card">
+      <h2>distances と previous</h2>
+      <table><thead><tr><th>場所</th><th>保存値</th><th>今回</th><th>直前</th></tr></thead><tbody id="rows"></tbody></table>
+      <h2 style="margin-top:20px">ヒープ内の候補</h2><div id="queue" class="queue"></div>
+      <p style="color:var(--muted);font-size:13px">赤い候補は、更新前の値がヒープに残ったものです。取り出したとき保存値と違えば無視します。</p>
+    </section>
+  </div>
+  <section class="card rule"><h2>毎回の判断</h2><div class="formula">新候補 = distances[現在地] + 次の移動コスト<br>新候補 &lt; distances[移動先] のときだけ更新</div></section>
+</main>
+<script>
+const names=["start","A","B","C","D","E","F","X","goal"];
+const base={start:0,A:"∞",B:"∞",C:"∞",D:"∞",E:"∞",F:"∞",X:"∞",goal:"∞"};
+const steps=[
+ {at:"start",done:[],edges:[],d:{...base},p:{},q:[[0,"start"]],u:{},t:"startだけ0。まだ一度も到達していない場所は∞です。"},
+ {at:"start",done:["start"],edges:["sa","sb","sc"],d:{...base,A:2,B:1,C:2},p:{A:"start",B:"start",C:"start"},q:[[1,"B"],[2,"A"],[2,"C"]],u:{A:"∞ → 2",B:"∞ → 1",C:"∞ → 2"},t:"startから3方向へ分岐。最小のB(1)が次の調査対象です。"},
+ {at:"B",done:["start","B"],edges:["sb","bd","be"],d:{...base,A:2,B:1,C:2,D:3,E:4},p:{A:"start",B:"start",C:"start",D:"B",E:"B"},q:[[2,"A"],[2,"C"],[3,"D"],[4,"E"]],u:{D:"∞ → 3",E:"∞ → 4"},t:"Bまで1。Dは1+2=3、Eは1+3=4として保存します。"},
+ {at:"A",done:["start","B","A"],edges:["sa","ad","ae"],d:{...base,A:2,B:1,C:2,D:3,E:3},p:{A:"start",B:"start",C:"start",D:"B",E:"A"},q:[[2,"C"],[3,"D"],[3,"E"],[4,"E",true]],u:{D:"3のまま",E:"4 → 3"},t:"A→Eなら2+1=3。保存中の4より短いためEを4→3に更新。古いE(4)はヒープに残ります。"},
+ {at:"C",done:["start","B","A","C"],edges:["sc","ce","cf"],d:{...base,A:2,B:1,C:2,D:3,E:3,F:3},p:{A:"start",B:"start",C:"start",D:"B",E:"A",F:"C"},q:[[3,"D"],[3,"E"],[3,"F"],[4,"E",true]],u:{E:"3 = 3",F:"∞ → 3"},t:"C→Eも合計3なので変更なし。C→Fは2+1=3として新しく保存します。"},
+ {at:"D",done:["start","B","A","C","D"],edges:["sb","bd","dx"],d:{...base,A:2,B:1,C:2,D:3,E:3,F:3,X:6},p:{A:"start",B:"start",C:"start",D:"B",E:"A",F:"C",X:"D"},q:[[3,"E"],[3,"F"],[4,"E",true],[6,"X"]],u:{X:"∞ → 6"},t:"D→Xは3+3=6。Xの最初の候補として6を保存します。"},
+ {at:"E",done:["start","B","A","C","D","E"],edges:["sa","ae","ex"],d:{...base,A:2,B:1,C:2,D:3,E:3,F:3,X:4},p:{A:"start",B:"start",C:"start",D:"B",E:"A",F:"C",X:"E"},q:[[3,"F"],[4,"E",true],[4,"X"],[6,"X",true]],u:{X:"6 → 4"},t:"E→Xは3+1=4。保存中の6より短いためXを6→4へ更新します。"},
+ {at:"F",done:["start","B","A","C","D","E","F"],edges:["sc","cf","fx"],d:{...base,A:2,B:1,C:2,D:3,E:3,F:3,X:4},p:{A:"start",B:"start",C:"start",D:"B",E:"A",F:"C",X:"E"},q:[[4,"E",true],[4,"X"],[6,"X",true]],u:{X:"4 < 5"},t:"F→Xなら3+2=5。保存中の4より遅いので更新しません。古いE(4)も取り出したら無視します。"},
+ {at:"X",done:["start","B","A","C","D","E","F","X"],edges:["sa","ae","ex","xg"],d:{...base,A:2,B:1,C:2,D:3,E:3,F:3,X:4,goal:5},p:{A:"start",B:"start",C:"start",D:"B",E:"A",F:"C",X:"E",goal:"X"},q:[[5,"goal"],[6,"X",true]],u:{goal:"∞ → 5"},t:"X→goalは4+1=5。goalを候補としてヒープへ追加します。"},
+ {at:"goal",done:names,edges:["sa","ae","ex","xg"],d:{...base,A:2,B:1,C:2,D:3,E:3,F:3,X:4,goal:5},p:{A:"start",B:"start",C:"start",D:"B",E:"A",F:"C",X:"E",goal:"X"},q:[[6,"X",true]],u:{},t:"goal(5)が最小候補として取り出されました。最短経路は start → A → E → X → goal です。"}
+];
+let i=0;const status=document.querySelector("#status"),rows=document.querySelector("#rows"),queue=document.querySelector("#queue"),prev=document.querySelector("#prev"),next=document.querySelector("#next");
+function render(){const s=steps[i];status.innerHTML=`<div class="step">ステップ ${i+1} / ${steps.length}</div>${s.t}`;document.querySelectorAll(".node").forEach(x=>x.classList.remove("done","current"));document.querySelectorAll(".edge").forEach(x=>x.classList.remove("active"));s.done.forEach(n=>document.querySelector(`#n-${n.toLowerCase()}`).classList.add("done"));document.querySelector(`#n-${s.at.toLowerCase()}`).classList.add("current");s.edges.forEach(e=>document.querySelector(`#${e}`).classList.add("active"));rows.innerHTML=names.map(n=>`<tr class="${s.u[n]?"changed":""}"><td>${n}</td><td>${s.d[n]}</td><td class="update">${(s.u[n]===undefined?"—":s.u[n])}</td><td>${(s.p[n]===undefined?"—":s.p[n])}</td></tr>`).join("");queue.innerHTML=s.q.map(([d,n,old])=>`<span class="pill ${old?"stale":""}">(${d}, ${n})</span>`).join("")||"空";prev.disabled=i===0;next.disabled=i===steps.length-1}
+prev.onclick=()=>{if(i>0){i--;render()}};next.onclick=()=>{if(i<steps.length-1){i++;render()}};render(); for (let testStep = 0; testStep < 20; testStep++) next.click();
+</script></body></html>

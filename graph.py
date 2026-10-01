@@ -29,29 +29,15 @@ class Graph:
             する辞書。
         """
         # 接続がないゾーンにも空リストを用意
-		adjacency = {}
+        adjacency: dict[str, list[Connection]] = {}
         for zone_name in self.zones:
             adjacency[zone_name] = []
 
         # 各接続を両方のゾーンに登録
-		for connection in self.connections.values():
-			adjacency[connection.zone1].append(connection)
+        for connection in self.connections.values():
+            adjacency[connection.zone1].append(connection)
             adjacency[connection.zone2].append(connection)
         return adjacency
-
-    def get_zone(self, zone_name: str) -> Zone:
-        """名前を指定してゾーン情報を取得する。
-
-        Args:
-            zone_name: 取得するゾーンの名前。
-
-        Returns:
-            指定された名前に対応するZone。
-
-        Raises:
-            KeyError: 指定されたゾーンが存在しない場合。
-        """
-        pass
 
     def get_neighbors(self, zone_name: str) -> list[Zone]:
         """指定したゾーンから直接移動できる隣接ゾーンを取得する。
@@ -67,7 +53,15 @@ class Graph:
         Raises:
             KeyError: 指定されたゾーンが存在しない場合。
         """
-        pass
+        neighbors = []
+        for connection in self.adjacency[zone_name]:
+            if zone_name == connection.zone1:
+                neighbor_zone = self.zones[connection.zone2]
+            else:
+                neighbor_zone = self.zones[connection.zone1]
+            if neighbor_zone.metadata["zone"] != "blocked":
+                neighbors.append(neighbor_zone)
+        return neighbors
 
     def get_connection(
         self,
@@ -83,7 +77,11 @@ class Graph:
         Returns:
             2ゾーン間のConnection。接続が存在しない場合はNone。
         """
-        pass
+        if zone1 < zone2:
+            connection = self.connections.get((zone1, zone2))
+        else:
+            connection = self.connections.get((zone2, zone1))
+        return connection
 
     def get_start_zone(self) -> Zone:
         """マップ内でstart_hubとして定義されたゾーンを取得する。
@@ -94,7 +92,10 @@ class Graph:
         Raises:
             ValueError: start_hubが存在しない場合。
         """
-        pass
+        for zone in self.zones.values():
+            if zone.role == "start_hub:":
+                return zone
+        raise ValueError("Start hub is not defined.")
 
     def get_end_zone(self) -> Zone:
         """マップ内でend_hubとして定義されたゾーンを取得する。
@@ -105,21 +106,10 @@ class Graph:
         Raises:
             ValueError: end_hubが存在しない場合。
         """
-        pass
-
-    def is_blocked(self, zone_name: str) -> bool:
-        """指定したゾーンが進入禁止か判定する。
-
-        Args:
-            zone_name: 判定するゾーンの名前。
-
-        Returns:
-            zone=blockedならTrue、それ以外ならFalse。
-
-        Raises:
-            KeyError: 指定されたゾーンが存在しない場合。
-        """
-        pass
+        for zone in self.zones.values():
+            if zone.role == "end_hub:":
+                return zone
+        raise ValueError("End hub is not defined.")
 
     def get_movement_cost(self, zone_name: str) -> int:
         """指定したゾーンへ進入するために必要なターン数を返す。
@@ -137,4 +127,13 @@ class Graph:
             KeyError: 指定されたゾーンが存在しない場合。
             ValueError: 指定されたゾーンがblockedの場合。
         """
-        pass
+        zone = self.zones[zone_name]
+        zone_type = zone.metadata["zone"]
+        if zone_type == "blocked":
+            raise ValueError(f"Cannot enter blocked zone '{zone_name}'.")
+        if zone_type == "restricted":
+            return 2
+        if zone_type == "normal" or zone_type == "priority":
+            return 1
+        raise ValueError(f"Unknown zone type '{zone_type}'.")
+        

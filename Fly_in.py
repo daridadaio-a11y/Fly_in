@@ -1,5 +1,6 @@
 from read_map4 import Parser
 from errors import MapParseError
+from graph import Graph
 import sys
 
 def main() -> int:
@@ -16,6 +17,11 @@ def main() -> int:
         file_path = sys.argv[1]
         parser = Parser(file_path)
         map_data = parser.parse()
+        graph = Graph(map_data)
+        start = graph.get_start_zone().name
+        print(f"{start}")
+        print(f"{graph.get_end_zone().name}")
+        print(f"{graph.get_neighbors(start)}")
         print(f"{map_data.total_drones}")
         print(f"{map_data.connections}")
         print(f"{map_data.zones}")

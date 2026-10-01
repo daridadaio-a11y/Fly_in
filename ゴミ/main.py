@@ -1,6 +1,6 @@
 import sys
 
-from read_map import parser
+from ゴミ.read_map import parser
 
 if __name__ == "__main__":
     try:
