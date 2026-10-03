@@ -1,0 +1,12 @@
+# Test: entering a restricted zone costs 2 turns
+nb_drones: 1
+
+start_hub: start 0 0 [color=green]
+hub: restricted_path 1 -1 [zone=restricted color=red]
+hub: normal_path 1 1 [zone=normal color=blue]
+end_hub: goal 2 0 [color=yellow]
+
+connection: start-restricted_path
+connection: restricted_path-goal
+connection: start-normal_path
+connection: normal_path-goal
