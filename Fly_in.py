@@ -26,7 +26,6 @@ def main() -> int:
         print(f"{map_data.connections}")
         print(f"{map_data.zones}")
         print("読み込めた！！")
-        return 0
     except MapParseError as e:
         print(f"MapParseError: {e}", file=sys.stderr)
         return 1
@@ -36,6 +35,7 @@ def main() -> int:
     except Exception as e:
         print(f"{type(e).__name__}: {e}", file=sys.stderr)
         return 1
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())
