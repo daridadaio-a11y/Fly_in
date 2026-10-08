@@ -1,7 +1,7 @@
 """予約表を避けて1機分の時間付き経路を探す設計骨組み。"""
 
 from graph import Graph
-from reservation_table import ReservationTable
+from ゴミ.reservation_table import ReservationTable
 
 
 class ReservationPathFinder:

@@ -4,7 +4,7 @@
 """
 
 from graph import Graph
-
+from models import MapData
 
 class ReservationTable:
     """ターンごとのゾーン使用数と接続使用数を管理する。
@@ -20,8 +20,12 @@ class ReservationTable:
     ゾーン名、またはrestricted移動中の正規化した接続名を表す。
     """
 
-    def __init__(self, graph: Graph, total_drones: int) -> None:
+    def __init__(self, graph: Graph, mapdata: MapData) -> None:
         """空のゾーン予約表、接続予約表、機体別経路を用意する。"""
+        self.graph = graph
+        self.mapdata = mapdata
+        self.total_drones = mapdata.total_drones
+        
 
     def connection_key(self, zone1: str, zone2: str) -> tuple[str, str]:
         """双方向で共有する接続キーを一定の順序で返す。

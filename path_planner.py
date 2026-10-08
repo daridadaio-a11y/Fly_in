@@ -1,7 +1,7 @@
 """全ドローンの時間付き経路を順番に計画する設計骨組み。"""
 
 from reservation_pathfinder import ReservationPathFinder
-from reservation_table import ReservationTable
+from ゴミ.reservation_table import ReservationTable
 
 
 class PathPlanner:
