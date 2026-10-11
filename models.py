@@ -1,5 +1,9 @@
 from dataclasses import dataclass
+from typing import TypeAlias
 
+DroneId : TypeAlias = int
+ZoneName: TypeAlias = str
+Turn: TypeAlias = int
 MetadataValue = str | int
 
 

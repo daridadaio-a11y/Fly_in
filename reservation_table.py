@@ -1,13 +1,11 @@
 from typing import TypeAlias, cast
 from graph import Graph
-
-ZoneName: TypeAlias = str
-Turn: TypeAlias = int
-DroneId: TypeAlias = int  # ドローン一機のID
+from models import DroneId, ZoneName, Turn
 ZoneAtTurn: TypeAlias = tuple[ZoneName, Turn]  # ゾーン名、予約ターン
 ConnectionAtTurn: TypeAlias = tuple[ZoneName, ZoneName, Turn]  # 接続元、接続先、予約ターン
 
 class ReservationTable:
+    """容量の確認と予約記録を担当する。"""
     def __init__(self, graph: Graph) -> None:
         self.graph = graph
         # 各ターン・各ゾーンを予約しているドローンIDを記録
@@ -61,5 +59,7 @@ class ReservationTable:
             reserved_drone_ids = self.zone_reservations.setdefault((zone_name, turn), set())
         
 
-    def reservared_connection(self, zone1: ZoneName, zone2: ZoneName, turn: Turn, drone_id: DroneId):
-
+    def reserve_connection(self, zone1: ZoneName, zone2: ZoneName, turn: Turn, drone_id: DroneId):
+        """max_link_capacityを確認して使用できれば辞書に追加。
+           (zone_name, zone_name, turn)の集合がなければ、空集合を辞書へ登録。
+           その集合へdrone_idを追加。"""

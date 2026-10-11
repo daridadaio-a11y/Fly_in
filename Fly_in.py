@@ -1,6 +1,8 @@
-from read_map4 import Parser
+from read_map import Parser
 from errors import MapParseError
 from graph import Graph
+from reservation_table import ReservationTable
+from path_planner import PathPlanner
 import sys
 
 def main() -> int:
@@ -18,6 +20,9 @@ def main() -> int:
         parser = Parser(file_path)
         map_data = parser.parse()
         graph = Graph(map_data)
+        reservation_table = ReservationTable(graph)
+        total_drones = map_data.total_drones
+        path_planner = PathPlanner(graph, reservation_table, total_drones)
         start = graph.get_start_zone().name
         print(f"{start}")
         print(f"{graph.get_end_zone().name}")
