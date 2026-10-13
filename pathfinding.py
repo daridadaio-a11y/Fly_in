@@ -1,8 +1,8 @@
 """グラフ上でドローンの経路を探索するモジュール。"""
 
 import heapq
-
 from graph import Graph
+from models import ZoneName
 
 
 class PathFinder:
@@ -16,21 +16,26 @@ class PathFinder:
         """
         self.graph = graph
 
-    def find_shortest_path(self) -> list[str] | None:
-        """開始ゾーンから終了ゾーンまでの最良経路を探索する。
+    def find_shortest_path(
+                           self,
+                           start_name: ZoneName,
+                           end_name: ZoneName
+                           ) -> tuple[
+                                      list[ZoneName], # 最短経路
+                                      tuple[int,  int], # 合計コスト、priority評価
+                                     ] | None:
+        """行ける候補のゾーンからゴールのゾーンまでの最良経路を探索する。
 
         移動コストの合計が最小になる経路を優先し、合計コストが同じ場合は
         priorityゾーンをより多く通る経路を優先する。blockedゾーンは
-        ``Graph.get_neighbors``によって探索対象から除外される。
+        Graph.get_neighborsによって探索対象から除外される。
 
         Returns:
-            開始ゾーンから終了ゾーンまでのゾーン名を順番に格納したリスト。
+            候補のゾーンからからゴールまでの最短経路のゾーン名を順番に格納したリスト
+            合計コスト、priority評価のタプル
+
             終了ゾーンへ到達できない場合はNone。
         """
-        # 開始ゾーン名と終了ゾーン名を取得する。
-        start_name = self.graph.get_start_zone().name
-        end_name = self.graph.get_end_zone().name
-
         # tupleの辞書順比較により、ターン数が同じならpriorityを優先する。
         # ゾーン名：(ターン数、priority)
         best_scores: dict[str, tuple[int, int]] = {start_name: (0, 0)}
@@ -81,4 +86,4 @@ class PathFinder:
 
         # 経路を開始ゾーンからの順番に直して返す。
         shortest_path.reverse()
-        return shortest_path
+        return shortest_path, best_scores[end_name] #

@@ -4,6 +4,7 @@ from models import DroneId, ZoneName, Turn
 ZoneAtTurn: TypeAlias = tuple[ZoneName, Turn]  # ゾーン名、予約ターン
 ConnectionAtTurn: TypeAlias = tuple[ZoneName, ZoneName, Turn]  # 接続元、接続先、予約ターン
 
+
 class ReservationTable:
     """容量の確認と予約記録を担当する。"""
     def __init__(self, graph: Graph) -> None:
@@ -52,7 +53,7 @@ class ReservationTable:
         return False
 
     def reserve_zone(self, zone_name: ZoneName, turn: Turn, drone_id: DroneId):
-        """max_droneを確認して使用できるれば辞書に追加。
+        """max_droneを確認して使用できれば辞書に追加。
            (zone_name, turn)の集合がなければ、空集合を辞書へ登録。
            その集合へdrone_idを追加。"""
         if self.can_use_zone(zone_name, turn):
