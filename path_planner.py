@@ -72,15 +72,15 @@ class PathPlanner:
         return move_candidates
 
     def choose_moves(self, move_candidates_by_drone: dict[DroneId, list[ZoneName]]) -> dict[DroneId, ZoneName]:
-        """ドローンごとの全移動候補で実際に行ける移動先を探す。
-           ドローンごとに実際に選んだ移動先を返す。
+        """ドローンごとの移動候補を評価し、実際の移動先を決める
+           
            各ドローンについて
               空のcandidate_scoresを作る
-              そのドローンの各候補について
-                 候補からgoalまでの経路を探す
-                 評価tupleをcandidate_scoresへ追加する
-              最小の評価tupleを選ぶ
-              選ばれたゾーンだけをchosen_movesへ保存する
+              各移動候補からgoalまでの経路を探す
+              移動コストとpriorityの評価tupleをcandidate_scoresへ追加する
+              評価順に並べ、容量を再確認し、予約可能な最初の候補を選ぶ
+              選ばれたゾーンをchosen_movesへ保存する
+            ドローンごとに実際に選んだ移動先を返す
         """
         chosen_moves: dict[DroneId, ZoneName] = {}
         goal_name = self.graph.get_end_zone().name
@@ -93,12 +93,12 @@ class PathPlanner:
             move_candidates = move_candidates_by_drone[drone_id]
             
             for candidate_zone in move_candidates:
-                
                 result = pathfinder.find_shortest_path(candidate_zone, goal_name)
                 if result is None:
                     continue
                 _path, score = result # 各候補の最短経路、合計移動コストpriority評価のtuple
-                remaining_cost, remaining_priority = score # 候補からゴールまでのコスト、priorityの数
+                remaining_cost, remaining_priority = score 
+                # 候補からゴールまでの移動コスト、priorityの評価
                 first_move_cost = self.graph.get_movement_cost(candidate_zone)
                 
                 candidate = self.graph.zones[candidate_zone]
@@ -122,15 +122,50 @@ class PathPlanner:
                 )
             if not candidate_scores:
                 continue
-            # 最小の評価tupleを取得
-            best_score = min(candidate_scores)
-            # ゾーン名を取り出す
-            chosen_zone = best_score[2]
+            # 候補を合計コスト、
+            candidate_scores.sort()
+            # 評価順に容量を再確認し、予約可能な最初の候補を選ぶ
+            chosen_zone = self.choose_and_reserve_move(drone_id, candidate_scores)
+            if chosen_zone is None:
+                continue
+            # 選択できたドローンの移動先を記録する
             chosen_moves[drone_id] = chosen_zone
+            
         return chosen_moves
 
-D1とD2が同じAを選んだ場合、容量をこえてしまう。
-        
+# D1とD2が同じAを選んだ場合、容量をこえてしまう。
+# 今の時点で各ドローンが行けるゾーン,connectionがはいっているせいで先に行ったドローンのいるゾーンが容量オーバーになっていないか確かめる必要がある
+"""D1を処理
+    Aが最良
+    Aはまだ空いている
+    D1がAを予約
+
+D2を処理
+    Aが最良
+    しかしD1が予約済み
+    Aは使えない
+    次の候補Bを確認
+    Bが空いていればD2がBを予約"""
+    def choose_and_reserve_move(
+            self,
+            drone_id: DroneId,
+            candidate_scores: list[tuple[int, int, ZoneName]],
+            ) -> ZoneName | None:
+        """評価順に候補を確認
+           ゾーンと容量を再確認
+           使用可能なら予約する
+           選んだゾーンを返す"""  
+              各candidate_scoreについて
+    candidate_zoneを取り出す
+    current_zoneを取得
+    connection_turnを計算
+    arrival_turnを計算
+
+    ゾーンと接続の両方が空いているか確認
+        空いていれば両方を予約
+        candidate_zoneを返す
+
+全部試しても予約できなければNone
     def apply_moves(self,chosen_moves: dict[DroneId, ZoneName]) -> None:
         """予約と現在位置を更新する"""
         pass
