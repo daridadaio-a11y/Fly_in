@@ -1,7 +1,6 @@
 from typing import TypeAlias, cast
 from graph import Graph
-from models import DroneId, ZoneName, Turn
-ZoneAtTurn: TypeAlias = tuple[ZoneName, Turn]  # ゾーン名、予約ターン
+from models import DroneId, ZoneName, Turn, ZoneAtTurn
 ConnectionAtTurn: TypeAlias = tuple[ZoneName, ZoneName, Turn]  # 接続元、接続先、予約ターン
 
 
@@ -51,6 +50,15 @@ class ReservationTable:
         if current_connection_count < max_link_capacity:
             return True
         return False
+
+
+    def reserve_path(
+            self,
+            path: list[ZoneAtTurn],
+            drone_id: DroneId,
+    ) -> bool:
+        pass
+
 
     def reserve_zone(self, zone_name: ZoneName, turn: Turn, drone_id: DroneId) -> bool:
         """引数で指定されたゾーンとターンに引数で渡されたdrone_idを予約登録する関数

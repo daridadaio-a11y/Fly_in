@@ -2,7 +2,7 @@
 
 import heapq
 from graph import Graph
-from models import ZoneName
+from models import ZoneName ,Turn
 
 
 class PathFinder:
@@ -22,7 +22,7 @@ class PathFinder:
                            end_name: ZoneName
                            ) -> tuple[
                                       list[ZoneName], # 最短経路
-                                      tuple[int,  int], # 合計コスト、priority評価
+                                      tuple[Turn,  int], # 合計コスト、priority評価
                                      ] | None:
         """行ける候補のゾーンからゴールのゾーンまでの最良経路を探索する。
 
@@ -38,17 +38,18 @@ class PathFinder:
         """
         # tupleの辞書順比較により、ターン数が同じならpriorityを優先する。
         # ゾーン名：(ターン数、priority)
-        best_scores: dict[str, tuple[int, int]] = {start_name: (0, 0)}
+        best_scores: dict[ZoneName, tuple[Turn, int]] = {start_name: (0, 0)}
 
         # 直前のゾーンをバリューに記録し、探索終了後に経路を復元する。
-        previous_zone: dict[str, str | None] = {start_name: None}
+        previous_zone: dict[ZoneName, ZoneName | None] = {start_name: None}
         # 現在のターン数、priority、現在のゾーン名
-        search_queue: list[tuple[int, int, str]] = [(0, 0, start_name)]
+        search_queue: list[tuple[Turn, int, ZoneName]] = [(0, 0, start_name)]
 
         # 評価が最も良い候補から順に、隣接ゾーンを調べる。
         while search_queue:
             current_turns, priority, current_name = heapq.heappop(search_queue)
             current_score = (current_turns, priority)
+            # 同じゾーンのときにターン数、priorityを比較する。
             if current_score > best_scores[current_name]:
                 continue
             if current_name == end_name:

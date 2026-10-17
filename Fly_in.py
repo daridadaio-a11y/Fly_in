@@ -2,7 +2,7 @@ from read_map import Parser
 from errors import MapParseError
 from graph import Graph
 from reservation_table import ReservationTable
-from path_planner import PathPlanner
+from ゴミ.path_planner import PathPlanner
 import sys
 
 def main() -> int:

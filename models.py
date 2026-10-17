@@ -4,6 +4,7 @@ from typing import TypeAlias
 DroneId : TypeAlias = int
 ZoneName: TypeAlias = str
 Turn: TypeAlias = int
+ZoneAtTurn: TypeAlias = tuple[ZoneName, Turn]
 MetadataValue = str | int
 
 
