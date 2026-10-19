@@ -2,7 +2,7 @@ from read_map import Parser
 from errors import MapParseError
 from graph import Graph
 from reservation_table import ReservationTable
-from ゴミ.path_planner import PathPlanner
+from path_planner import PathPlanner
 import sys
 
 def main() -> int:
@@ -22,7 +22,7 @@ def main() -> int:
         graph = Graph(map_data)
         reservation_table = ReservationTable(graph)
         total_drones = map_data.total_drones
-        path_planner = PathPlanner(graph, reservation_table, total_drones)
+        path_planner = PathPlanner(graph, total_drones)
         start = graph.get_start_zone().name
         print(f"{start}")
         print(f"{graph.get_end_zone().name}")
@@ -44,7 +44,7 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-1. マップを解析する
+"""1. マップを解析する
 2. Graphを作る
 3. 予約表を作る
 4. 時間付き経路探索器を作る
@@ -52,3 +52,4 @@ if __name__ == "__main__":
 6. 計画できなければエラーにする
 7. 計画をシミュレーションする
 8. 指定形式で出力する
+"""
