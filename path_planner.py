@@ -22,7 +22,7 @@ class PathPlanner:
     def plan_all(self) -> dict[DroneId, list[ZoneAtTurn]]:
         """理論上の最大ターン数を超えないように
         探索ｰ>reserve_pathで経路を予約ｰ>planned_pathsへ保存、を繰り返す"""
-        # ローカル変数にすることにより
+        # ローカル変数にすることにより何度呼び出しても同じ結果になる
         reservations = ReservationTable(self.graph)
         reservation_pathfinder = ReservationPathFinder(self.graph)
         pathfinder = PathFinder(self.graph)

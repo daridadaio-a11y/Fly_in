@@ -66,12 +66,33 @@ class ReservationTable:
             path_list: list[ZoneAtTurn],
             drone_id: DroneId,
     ) -> bool:
-        """受け取った完成経路を読み、既存の小さな予約関数を順に呼ぶ"""
+        """受け取った完成経路を読み、既存の小さな予約関数を順に呼ぶ
+           予約できないpath_listを受け取った場合でも、
+           途中までの予約を残さない
+           一周目：最後まで予約可能かの確認
+           二周目：実際に予約する"""
         for i in range(len(path_list) - 1):
-            previous_state = path_list[i]
-            current_state = path_list[i + 1]
-            previous_zone, previous_turn = previous_state
-            current_zone, current_turn = current_state
+            previous_zone, previous_turn = path_list[i]
+            current_zone, current_turn = path_list[i + 1]
+            if previous_zone == current_zone:
+                if not self.can_use_zone(current_zone, current_turn):
+                    return False
+            else:
+                if not self.can_use_connection(
+                    previous_zone,
+                    current_zone,
+                    previous_turn + 1,
+                    ):
+                    return False
+                if not self.can_use_zone(
+                    current_zone,
+                    current_turn,
+                ):
+                    return False
+
+        for i in range(len(path_list) - 1):
+            previous_zone, previous_turn = path_list[i]
+            current_zone, current_turn = path_list[i + 1]
             # 待機か移動かを確認する
             if previous_zone == current_zone:
                 if not self.reserve_zone(
