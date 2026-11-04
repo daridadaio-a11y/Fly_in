@@ -136,4 +136,3 @@ class Graph:
         if zone_type == "normal" or zone_type == "priority":
             return 1
         raise ValueError(f"Unknown zone type '{zone_type}'.")
-        

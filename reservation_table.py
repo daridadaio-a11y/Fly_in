@@ -17,7 +17,7 @@ class ReservationTable:
 
     def can_use_zone(self, zone_name: ZoneName, turn: Turn) -> bool:
         """指定したターン、指定ゾーンにもう一機予約できるかを判定する。
-           
+
             zone_nameから指定されたゾーンを取得
             max_dronesを取得
             (zone_name, turn)から予約済みドローンIDの集合を取得
@@ -36,14 +36,20 @@ class ReservationTable:
         max_drones = cast(int, zone.metadata["max_drones"])
         # 予約がある場合(キーあり)はドローンID集合を取得する
         # 予約がない場合(キー無し)は空集合を取得し、辞書はできない
-        reservation_drone_ids = self.zone_reservations.get((zone_name, turn), set())
+        reservation_drone_ids = self.zone_reservations.get(
+            (zone_name, turn), set())
         # 現在のゾーン、ターンにいるドローンの数とmax_dronesを比較まだ予約可能か確認
         current_drone_count = len(reservation_drone_ids)
         if current_drone_count < max_drones:
             return True
         return False
 
-    def can_use_connection(self, zone1: ZoneName, zone2: ZoneName, turn: Turn) -> bool:
+    def can_use_connection(
+            self,
+            zone1: ZoneName,
+            zone2: ZoneName,
+            turn: Turn,
+            ) -> bool:
         """指定したターンに、指定した接続にもう一機予約できるかを判定する。
            両方向を同じ接続として扱い、予約数がmax_link_capacity未満かを判定する。
         """
@@ -59,7 +65,6 @@ class ReservationTable:
         if current_connection_count < max_link_capacity:
             return True
         return False
-
 
     def reserve_path(
             self,
@@ -82,7 +87,7 @@ class ReservationTable:
                     previous_zone,
                     current_zone,
                     previous_turn + 1,
-                    ):
+                ):
                     return False
                 if not self.can_use_zone(
                     current_zone,
@@ -98,8 +103,8 @@ class ReservationTable:
                 if not self.reserve_zone(
                     current_zone,
                     current_turn,
-                    drone_id
-                    ):
+                    drone_id,
+                ):
                     return False
             else:
                 if not self.reserve_connection(
@@ -107,7 +112,7 @@ class ReservationTable:
                     current_zone,
                     previous_turn + 1,
                     drone_id,
-                    ):
+                ):
                     return False
                 if not self.reserve_zone(
                     current_zone,
@@ -116,8 +121,13 @@ class ReservationTable:
                 ):
                     return False
         return True
-            
-    def reserve_zone(self, zone_name: ZoneName, turn: Turn, drone_id: DroneId) -> bool:
+
+    def reserve_zone(
+            self,
+            zone_name: ZoneName,
+            turn: Turn,
+            drone_id: DroneId,
+            ) -> bool:
         """引数で指定されたゾーンとターンに引数で渡されたdrone_idを予約登録する関数
            max_droneを確認して使用できれば辞書に追加。
            (zone_name, turn)の集合がなければ、空集合を辞書へ登録。
@@ -128,14 +138,20 @@ class ReservationTable:
             # reserved_drone_ids = set()
             reserved_drone_ids = self.zone_reservations.setdefault(
                 (zone_name, turn),
-                set(), 
+                set(),
                 )
             # 同じ集合を指しているので辞書のバリューも変わる
             reserved_drone_ids.add(drone_id)
             return True
         return False
 
-    def reserve_connection(self, zone1: ZoneName, zone2: ZoneName, turn: Turn, drone_id: DroneId) -> bool:
+    def reserve_connection(
+            self,
+            zone1: ZoneName,
+            zone2: ZoneName,
+            turn: Turn,
+            drone_id: DroneId,
+            ) -> bool:
         """max_link_capacityを確認して使用できれば辞書に追加。
            (zone_name, zone_name, turn)の集合がなければ、空集合を辞書へ登録。
            その集合へdrone_idを追加。"""

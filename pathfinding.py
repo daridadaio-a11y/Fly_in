@@ -2,7 +2,7 @@
 
 import heapq
 from graph import Graph
-from models import ZoneName ,Turn
+from models import ZoneName, Turn
 
 
 class PathFinder:
@@ -21,8 +21,8 @@ class PathFinder:
                            start_name: ZoneName,
                            end_name: ZoneName
                            ) -> tuple[
-                                      list[ZoneName], # 最短経路
-                                      tuple[Turn,  int], # 合計コスト、priority評価
+                                      list[ZoneName],  # 最短経路
+                                      tuple[Turn,  int],  # 合計コスト、priority評価
                                      ] | None:
         """行ける候補のゾーンからゴールのゾーンまでの最良経路を探索する。
 
@@ -87,4 +87,4 @@ class PathFinder:
 
         # 経路を開始ゾーンからの順番に直して返す。
         shortest_path.reverse()
-        return shortest_path, best_scores[end_name] #
+        return shortest_path, best_scores[end_name]

@@ -6,6 +6,7 @@ from reservation_pathfinder import ReservationPathFinder
 from pathfinding import PathFinder
 from models import DroneId, ZoneAtTurn
 
+
 class PathPlanner:
     """ドローンIDを1から順に取り出す
     → ReservationPathFinderで完成経路を探す
@@ -18,7 +19,7 @@ class PathPlanner:
             ):
         self.graph = graph
         self.total_drones = total_drones
-            
+
     def plan_all(self) -> dict[DroneId, list[ZoneAtTurn]]:
         """理論上の最大ターン数を超えないように
         探索ｰ>reserve_pathで経路を予約ｰ>planned_pathsへ保存、を繰り返す"""
@@ -68,4 +69,5 @@ class PathPlanner:
             # 成功した経路を保存する
             planned_paths[drone_id] = path_list
         return planned_paths
+
 

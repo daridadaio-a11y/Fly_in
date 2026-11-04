@@ -1,9 +1,10 @@
 from read_map import Parser
 from errors import MapParseError
 from graph import Graph
-from reservation_table import ReservationTable
 from path_planner import PathPlanner
+from simulation import Simulation
 import sys
+
 
 def main() -> int:
     """コマンドラインからパーサーを実行するための入口。
@@ -12,25 +13,39 @@ def main() -> int:
     解析する。成功時には解析結果を表示し、失敗時には利用方法または
     エラーメッセージを標準エラー出力へ表示することを想定している。
     """
-    if len(sys.argv) != 2:
-        print("Usage: python3 Fly_in.py <mapfile>", file=sys.stderr)
+    visual_mode = False
+
+    if len(sys.argv) == 2:
+        file_path = sys.argv[1]
+    elif len(sys.argv) == 3 and sys.argv[1] == "--visual":
+        visual_mode = True
+        file_path = sys.argv[2]
+    else:
+        print(
+            "Usage: python3 fly_in.py [--visual] <mapfile>",
+            file=sys.stderr,
+        )
         return 1
     try:
-        file_path = sys.argv[1]
         parser = Parser(file_path)
         map_data = parser.parse()
         graph = Graph(map_data)
-        reservation_table = ReservationTable(graph)
         total_drones = map_data.total_drones
         path_planner = PathPlanner(graph, total_drones)
-        start = graph.get_start_zone().name
-        print(f"{start}")
-        print(f"{graph.get_end_zone().name}")
-        print(f"{graph.get_neighbors(start)}")
-        print(f"{map_data.total_drones}")
-        print(f"{map_data.connections}")
-        print(f"{map_data.zones}")
-        print("読み込めた！！")
+        planned_paths = path_planner.plan_all()
+        simulation = Simulation(graph, planned_paths)
+
+        output_lines = simulation.run()
+        for output_line in output_lines:
+            print(output_line)
+
+        if visual_mode:
+            # 遅延インポート
+            from visualizer import Visualizer
+
+            visualizer = Visualizer(graph)
+            visualizer.make_pygame()
+
     except MapParseError as e:
         print(f"MapParseError: {e}", file=sys.stderr)
         return 1
@@ -42,14 +57,6 @@ def main() -> int:
         return 1
     return 0
 
+
 if __name__ == "__main__":
     sys.exit(main())
-"""1. マップを解析する
-2. Graphを作る
-3. 予約表を作る
-4. 時間付き経路探索器を作る
-5. 全機の経路を計画する
-6. 計画できなければエラーにする
-7. 計画をシミュレーションする
-8. 指定形式で出力する
-"""
