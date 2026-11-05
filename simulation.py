@@ -42,6 +42,38 @@ class Simulation:
 
         return turn_states
 
+    def build_initial_state(self) -> TurnState:
+        """全ドローンが出発地点にいるターン0を作る"""
+
+        # ドローンIDごとに、ターン0でいる場所を保存する
+        drone_positions: dict[DroneId, tuple[str, ...]] = {}
+
+        # 各スタートゾーンに何機いるかを保存する
+        zone_usage: dict[ZoneName, int] = {}
+
+        # 全ドローンの計画済み経路を順番に確認する
+        for drone_id, path in self.planned_paths.items():
+            # path[0]は、そのドローンの最初の位置を表す
+            start_zone = path[0][0]
+            drone_positions[drone_id] = ("zone", start_zone)
+            # 同じスタートゾーンにいるドローン数を1増やす
+            zone_usage[start_zone] = zone_usage.get(start_zone, 0) + 1
+        # Rendererが描画できるTurnState形式で返す
+        return {
+            # 移動開始前なのでターン番号は0
+            "turn": 0,
+            # まだ誰も移動していないため、移動文字列は空
+            "movements": [],
+            # 全ドローンの初期位置
+            "drone_positions": drone_positions,
+            # 各スタートゾーンにいるドローン数
+            "zone_usage": zone_usage,
+            # まだ接続を使用していない
+            "connection_usage": {},
+            # まだゴールしたドローンはいない
+            "delivered_count": 0,
+        }
+
     def _build_turn_state(self, turn: int) -> TurnState:
         """指定ターンの位置、使用数、移動情報を作る。"""
         turn_movements: list[str] = []  # このターンの文字出力
@@ -117,10 +149,16 @@ class Simulation:
                         turn_movements.append(movement)
 
         return {
+            # 現在のターン番号
             "turn": turn,
+            # このターンに出力するドローンの移動文字列一覧
             "movements": turn_movements,
+            # 各ドローンがこのターン終了時にいる場所
             "drone_positions": drone_positions,
+            # このターンに各ゾーンを使用しているドローン数
             "zone_usage": zone_usage,
+            # このターンに各接続を使用しているドローン数
             "connection_usage": connection_usage,
+            # このターンまでにゴールへ到着したドローンの合計数
             "delivered_count": delivered_count,
         }

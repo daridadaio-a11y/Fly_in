@@ -1,6 +1,9 @@
 import pygame
+
 from graph import Graph
-WIDTH, HEIGHT = 1000, 700
+from renderer import Renderer
+from models import TurnState
+WIDTH, HEIGHT = 3000, 2000
 # 色の設定
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -14,148 +17,132 @@ BLACK = (0, 0, 0)
 
 class Visualizer:
 
-    def __init__(self, graph: Graph) -> None:
+    def __init__(self, graph: Graph, turn_states: list[TurnState]) -> None:
         self.graph = graph
-        (
-            self.min_x,
-            self.max_x,
-            self.min_y,
-            self.max_y,
-        ) = self._get_map_bounds()
+        self.turn_states = turn_states
+        # turn_states内の現在表示している位置
+        self.current_turn_index = 0
+        # Trueなら自動再生、Falseなら一時停止
+        self.is_playing = False
+        # 自動再生で次のターンへ進むまでの時間(ミリ秒)
+        self.turn_interval_ms = 1000
+        # 最後に自動でターンを進めた時刻
+        self.last_turn_time = 0
 
-    def to_screen_position(
+    def _handle_event(
             self,
-            map_x: int,
-            map_y: int,
-            screen_width: int,
-            screen_height: int,
-    ) -> tuple[int, int]:
-        """地図座標をpygameの画面座標へ変換する。"""
-        padding = 80  # 画面端の余白
-        # 実際に使える画面の大きさ
-        usable_width = screen_width - padding * 2
-        usable_height = screen_height - padding * 2
-        # 渡されたマップ全体の幅と高さ
-        map_width = self.max_x - self.min_x
-        map_height = self.max_y - self.min_y
-        # 画面に収まる倍率の計算
-        scale_x = usable_width / max(map_width, 1)
-        scale_y = usable_height / max(map_height, 1)
-        # 画面からはみ出ないように小さい方の倍率を選ぶ
-        scale = min(scale_x, scale_y)
-        # マップの実際の描画高さを求める
-        draw_widgh = map_width * scale
-        draw_height = map_height * scale
-        # 余った空間の半分を開始位置にする
-        offset_x = (screen_width - draw_widgh) / 2
-        offset_y = (screen_height - draw_height) / 2
+            event: pygame.event.Event,
+    ) -> bool:
+        """キー・終了操作を処理し、実行を続けるか返す"""
+        # 閉じるボタンが押されたか確認
+        if event.type == pygame.QUIT:
+            return False
 
+        # キー入力以外のイベントでは状態を変更しない
+        if event.type != pygame.KEYDOWN:
+            return True
+        # EscキーならVisualiserを終了する
+        if event.key == pygame.K_ESCAPE:
+            return False
+        self._key_event(event)
+        return True
 
+    def _key_event(
+            self,
+            event: pygame.event.Event,
+    ) -> None:
+        """キーを処理する"""
+        # Spaceで自動再生と一時停止を切り替える
+        if event.key == pygame.K_SPACE:
+            self.is_playing = not self.is_playing
+            # 時間を更新し、スペースを押した瞬間に次ターンに行くのを防ぐ
+            self.last_turn_time = pygame.time.get_ticks()
+        # 右キーで次のターンへ進む
+        elif event.key == pygame.K_RIGHT:
+            self.is_playing = False
+            # リストの最後の位置より少ない位置か確認
+            if self.current_turn_index < len(self.turn_states) - 1:
+                self.current_turn_index += 1
+        # 左キーで前のターンへ戻る
+        elif event.key == pygame.K_LEFT:
+            self.is_playing = False
 
+            if self.current_turn_index > 0:
+                self.current_turn_index -= 1
 
-        # マップの左端を０に揃える
-        normalized_x = map_x - self.min_x
-        # マップ座標をピクセルへ変換する
-        scaled_x = normalized_x * scale
-        screen_x = offset_x + scaled_x
-        # y座標は上下を反転させる
-        normalized_y = self.max_y - map_y
-        scaled_y = normalized_y * scale
-        screen_y = offset_y + scaled_y
+        # Rキーで最初のターンへ戻る
+        elif event.key == pygame.K_r:
+            self.is_playing = False
+            self.current_turn_index = 0
 
-        return int(screen_x), int(screen_y)
+    def _update_auto_play(self) -> None:
+        """再生中なら、指定時間ごとに次のターンへ進める"""
+        # 一時停止中なら何もしない
+        if not self.is_playing:
+            return
 
-    def _get_map_bounds(self) -> tuple[int, int, int, int]:
-        """全ゾーンからマップ座標の最小値、最大値を調べて返す"""
-        x_values: list[int] = []
-        y_values: list[int] = []
-        for zone in self.graph.zones.values():
-            x_values.append(zone.x)
-            y_values.append(zone.y)
-        min_x = min(x_values)
-        max_x = max(x_values)
-        min_y = min(y_values)
-        max_y = max(y_values)
-        return (min_x, max_x, min_y, max_y)
+        # pygame開始後から現在までの経過時間を取得する
+        current_time = pygame.time.get_ticks()
 
-    def _draw_connections(self, screen: pygame.Surface) -> None:
-        """円同士をつなぐラインの描画"""
-        for connection in self.graph.connections.values():
-            zone1 = self.graph.zones[connection.zone1]
-            zone2 = self.graph.zones[connection.zone2]
-            position1 = self.to_screen_position(
-                zone1.x,
-                zone1.y,
-                WIDTH,
-                HEIGHT,
-            )
-            position2 = self.to_screen_position(
-                zone2.x,
-                zone2.y,
-                WIDTH,
-                HEIGHT,
-            )
+        # 最後の更新から、設定した時間が立っていなければ何もしない
+        elapsed_time = current_time - self.last_turn_time
+        if elapsed_time < self.turn_interval_ms:
+            return
 
-            pygame.draw.line(
-                screen,
-                WHITE,
-                position1,
-                position2,
-                3,
-            )
+        # 最後のターンに到達していたら自動再生を止める
+        last_turn_index = len(self.turn_states) - 1
+        if self.current_turn_index >= last_turn_index:
+            self.is_playing = False
+            return
+        # 次のターンへ進む
+        self.current_turn_index += 1
 
-    def _draw_zones(self, screen: pygame.Surface) -> None:
-        """全ゾーンを種類に応じた色の円として描く"""
-        for zone in self.graph.zones.values():
-            position = self.to_screen_position(
-                zone.x,
-                zone.y,
-                WIDTH,
-                HEIGHT,
-            )
-            zone_type = zone.metadata["zone"]
-
-            if zone.role == "start_hub:":
-                color = GREEN
-            elif zone.role == "end_hub:":
-                color = YELLOW
-            elif zone_type == "blocked":
-                color = BLACK
-            elif zone_type == "restricted":
-                color = RED
-            else:
-                color = WHITE
-            pygame.draw.circle(
-                screen,  # 描画する画面
-                color,  # 色指定
-                position,  # 円の中心座標
-                20,  # 円の半径
-            )
+        # 今回進めた時刻を次の時間計測の開始点にする
+        self.last_turn_time = current_time
 
     def make_pygame(self) -> None:
         """pygameのウィンドウを開き、終了操作を処理する。"""
         pygame.init()
-        screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        # ウィンドウサイズを変更できるようにする
+        screen = pygame.display.set_mode(
+            (WIDTH, HEIGHT),
+            pygame.RESIZABLE,
+        )
         pygame.display.set_caption("疲れたよパトラッシュ")
         # フレームレートの制御
         clock = pygame.time.Clock()
+        renderer = Renderer(self.graph)
+
+        self.last_turn_time = pygame.time.get_ticks()
 
         running = True
         # while一周が画面の１フレーム
         while running:
             # 入力処理
             for event in pygame.event.get():
-                # 画面が閉じたら終了
-                if event.type == pygame.QUIT:
+                if self._handle_event(event) is False:
                     running = False
-            # 描画処理
+                    break
+            # 終了操作を受けた場合は描画せずwhileを抜ける
+            if not running:
+                break
+
+            # 必要な時間が経過していれば次のターンへ進める
+            self._update_auto_play()
             # 背景の色
             screen.fill(NIGHT_BLUE)  # 前の画面を消す
-            # 接続を描画
-            self._draw_connections(screen)
-            # 円を描画
-            self._draw_zones(screen)
-            # 全てに変更を反映させる
+            # 今表示するターン
+            current_state = self.turn_states[self.current_turn_index]
+            # 最後の状態が持っている、本当の最終ターン番号を取得する
+            total_turns = self.turn_states[-1]["turn"]
+            # 現在のターンを一度だけ描画する
+            renderer.draw(
+                screen,
+                current_state,
+                total_turns,
+            )
+
+            # 全てに変更を反映させ表示する
             pygame.display.update()
             # ループを一秒間に最大60回に制限する
             # これがないと何もなくとも高速でループし、CPUの無駄遣いになる

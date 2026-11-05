@@ -1,4 +1,3 @@
-PYTHON := .venv/bin/python
 UV := uv
 MAP ?= sample_map.txt
 
@@ -8,10 +7,13 @@ install:
 	$(UV) sync --dev
 
 run:
-	$(PYTHON) fly_in.py $(MAP)
+	$(UV) run python fly_in.py $(MAP)
+
+visual:
+	$(UV) run python fly_in.py --visual $(MAP)
 
 debug:
-	$(PYTHON) -m pdb fly_in.py $(MAP)
+	$(UV) run python -m pdb fly_in.py $(MAP)
 
 clean:
 	find . -type d -name '__pycache__' -prune -exec rm -rf {} +
@@ -20,21 +22,20 @@ clean:
 	rm -f .coverage .coverage.*
 
 lint:
-	$(PYTHON) -m flake8 . --exclude=.venv,__pycache__,.git,ゴミ,tmp
-	$(PYTHON) -m mypy . \
+	$(UV) run flake8 *.py tests
+	$(UV) run mypy *.py tests \
 		--warn-return-any \
 		--warn-unused-ignores \
 		--ignore-missing-imports \
 		--disallow-untyped-defs \
-		--check-untyped-defs \
-		--exclude '(^|/)(.venv|ゴミ|tmp)/'
+		--check-untyped-defs
 
 lint-strict:
-	$(PYTHON) -m flake8 . --exclude=.venv,__pycache__,.git,ゴミ,tmp
-	$(PYTHON) -m mypy . --strict --exclude '(^|/)(.venv|ゴミ|tmp)/'
+	$(UV) run flake8 *.py tests
+	$(UV) run mypy *.py tests --strict
 
 test:
-	$(PYTHON) -m pytest -q
+	$(UV) run pytest -q
 
 help:
 	@echo "make install          Install project and development dependencies"
