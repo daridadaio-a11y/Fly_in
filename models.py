@@ -12,6 +12,8 @@ MetadataValue = str | int
 
 
 class TurnState(TypedDict):
+    """1ターン分の移動、位置、使用量、配達数を保持する。"""
+
     turn: int
     movements: list[str]
     drone_positions: dict[DroneId, tuple[str, ...]]
@@ -22,6 +24,8 @@ class TurnState(TypedDict):
 
 @dataclass
 class Zone:
+    """マップ上の1ゾーンと、その役割・座標・メタデータ。"""
+
     name: str
     role: str
     metadata: dict[str, MetadataValue]
@@ -31,6 +35,8 @@ class Zone:
 
 @dataclass
 class Connection:
+    """2ゾーン間の無向接続と、その容量メタデータ。"""
+
     zone1: str
     zone2: str
     metadata: dict[str, MetadataValue]
@@ -38,6 +44,8 @@ class Connection:
 
 @dataclass
 class MapData:
+    """パーサーが生成するドローン数、ゾーン、接続の集合。"""
+
     total_drones: int
-    zones: dict
+    zones: dict[str, Zone]
     connections: dict[tuple[str, str], Connection]

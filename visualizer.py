@@ -16,8 +16,10 @@ BLACK = (0, 0, 0)
 
 
 class Visualizer:
+    """ターン状態の操作と自動再生を管理するPygame画面。"""
 
     def __init__(self, graph: Graph, turn_states: list[TurnState]) -> None:
+        """グラフと表示対象のターン状態を保存する。"""
         self.graph = graph
         self.turn_states = turn_states
         # turn_states内の現在表示している位置
@@ -26,6 +28,8 @@ class Visualizer:
         self.is_playing = False
         # 自動再生で次のターンへ進むまでの時間(ミリ秒)
         self.turn_interval_ms = 1000
+        # 次のターンの位置まで滑らかに移動する時間(ミリ秒)
+        self.transition_duration_ms = 450
         # 最後に自動でターンを進めた時刻
         self.last_turn_time = 0
 
@@ -133,6 +137,19 @@ class Visualizer:
             screen.fill(NIGHT_BLUE)  # 前の画面を消す
             # 今表示するターン
             current_state = self.turn_states[self.current_turn_index]
+            next_state = None
+            transition_progress = 0.0
+            if self.is_playing:
+                next_index = self.current_turn_index + 1
+                if next_index < len(self.turn_states):
+                    next_state = self.turn_states[next_index]
+                    elapsed_time = (
+                        pygame.time.get_ticks() - self.last_turn_time
+                    )
+                    transition_progress = min(
+                        elapsed_time / self.transition_duration_ms,
+                        1.0,
+                    )
             # 最後の状態が持っている、本当の最終ターン番号を取得する
             total_turns = self.turn_states[-1]["turn"]
             # 現在のターンを一度だけ描画する
@@ -140,6 +157,8 @@ class Visualizer:
                 screen,
                 current_state,
                 total_turns,
+                next_state,
+                transition_progress,
             )
 
             # 全てに変更を反映させ表示する

@@ -7,6 +7,7 @@ ConnectionAtTurn: TypeAlias = tuple[ZoneName, ZoneName, Turn]  # 接続元、接
 class ReservationTable:
     """容量の確認と予約記録を担当する。"""
     def __init__(self, graph: Graph) -> None:
+        """グラフを保存し、空のゾーン・接続予約表を作る。"""
         self.graph = graph
         # キー：（ゾーン名、ターン）
         # バリュー：その場所を予約しているドローンIDの集合

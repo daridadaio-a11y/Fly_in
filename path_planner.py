@@ -17,6 +17,7 @@ class PathPlanner:
             graph: Graph,
             total_drones: int,
             ):
+        """全ドローンの計画に使うグラフと機数を保存する。"""
         self.graph = graph
         self.total_drones = total_drones
 
@@ -69,5 +70,3 @@ class PathPlanner:
             # 成功した経路を保存する
             planned_paths[drone_id] = path_list
         return planned_paths
-
-

@@ -5,6 +5,7 @@ from pathlib import Path
 import unittest
 
 from graph import Graph
+from models import DroneId, ZoneAtTurn
 from path_planner import PathPlanner
 from read_map import Parser
 from simulation import Simulation
@@ -29,9 +30,13 @@ BENCHMARKS = {
 class ProvidedMapTests(unittest.TestCase):
     """提供された到達可能マップをすべて計画して検証する。"""
 
-    def _validate_paths(self, graph: Graph, paths: dict) -> None:
-        zone_usage: Counter = Counter()
-        connection_usage: Counter = Counter()
+    def _validate_paths(
+        self,
+        graph: Graph,
+        paths: dict[DroneId, list[ZoneAtTurn]],
+    ) -> None:
+        zone_usage: Counter[tuple[str, int]] = Counter()
+        connection_usage: Counter[tuple[str, str, int]] = Counter()
         start_name = graph.get_start_zone().name
         goal_name = graph.get_end_zone().name
 
@@ -65,12 +70,14 @@ class ProvidedMapTests(unittest.TestCase):
 
         for (zone_name, _turn), count in zone_usage.items():
             capacity = graph.zones[zone_name].metadata["max_drones"]
+            assert isinstance(capacity, int)
             self.assertLessEqual(count, capacity)
 
         for (zone1, zone2, _turn), count in connection_usage.items():
             connection = graph.get_connection(zone1, zone2)
             assert connection is not None
             capacity = connection.metadata["max_link_capacity"]
+            assert isinstance(capacity, int)
             self.assertLessEqual(count, capacity)
 
     def test_reachable_maps_are_valid_and_meet_benchmarks(self) -> None:

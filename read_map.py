@@ -4,7 +4,7 @@
 メタデータを解析した後、マップ全体の整合性を検証する流れを想定している。
 """
 
-from models import Zone, Connection, MapData
+from models import Connection, MapData, MetadataValue, Zone
 from errors import MapParseError
 
 
@@ -70,7 +70,7 @@ class Parser:
             clean_line = line_list[0].strip()
         if not clean_line:
             return
-            
+
         content, metadata_text = self._split_metadata(clean_line, line_num)
         parts = content.split()
         if not parts:
@@ -86,7 +86,10 @@ class Parser:
                 )
         if prefix == "nb_drones:":
             if metadata_text:
-                raise MapParseError(line_num, "nb_drones cannot have metadata.")
+                raise MapParseError(
+                    line_num,
+                    "nb_drones cannot have metadata.",
+                )
             self._parse_drone_count(parts, line_num)
         elif prefix in ("start_hub:", "end_hub:", "hub:"):
             self._parse_zone(parts, metadata_text, line_num)
@@ -149,7 +152,7 @@ class Parser:
             raise MapParseError(line_num, "The drone count must be positive.")
         self.total_drones = total_drones
         self._drone_count_seen = True
-    
+
     def _parse_zone(
         self,
         parts: list[str],
@@ -167,7 +170,10 @@ class Parser:
             line_num: エラー表示に使用する行番号。
         """
         if len(parts) != 4:
-            raise MapParseError(line_num, "Expected '<hub type> <name> <x> <y>'.")
+            raise MapParseError(
+                line_num,
+                "Expected '<hub type> <name> <x> <y>'.",
+            )
         role, name = parts[0], parts[1]
         if "-" in name:
             raise MapParseError(
@@ -286,10 +292,10 @@ class Parser:
     def _parse_metadata(
         self,
         metadata_text: str,
-        defaults: dict,
+        defaults: dict[str, MetadataValue],
         line_num: int,
         ignored_key: str | None = None
-    ) -> dict:
+    ) -> dict[str, MetadataValue]:
         """``key=value``形式のメタデータを辞書へ変換する。
 
         省略された項目には``defaults``の値を使用する。容量を表す項目は

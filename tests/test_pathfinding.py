@@ -14,7 +14,10 @@ ROOT = Path(__file__).resolve().parents[1]
 class PathFinderTests(unittest.TestCase):
     """priority、restricted、blocked、到達不能を確認する。"""
 
-    def _find(self, relative_path: str):
+    def _find(
+        self,
+        relative_path: str,
+    ) -> tuple[list[str], tuple[int, int]] | None:
         map_path = ROOT / relative_path
         graph = Graph(Parser(str(map_path)).parse())
         result = PathFinder(graph).find_shortest_path("start", "goal")

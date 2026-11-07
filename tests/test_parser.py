@@ -5,13 +5,14 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from errors import MapParseError
+from models import MapData
 from read_map import Parser
 
 
 class ParserTests(unittest.TestCase):
     """マップ形式とエラー処理を確認する。"""
 
-    def _parse(self, map_text: str):
+    def _parse(self, map_text: str) -> MapData:
         with TemporaryDirectory() as directory:
             map_path = Path(directory) / "map.txt"
             map_path.write_text(map_text, encoding="utf-8")

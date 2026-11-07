@@ -115,7 +115,7 @@ class ReservationPathFinder:
         candidates: list[ZoneAtTurn] = []
         next_turn = turn + 1
         if next_turn > max_turn:
-           return candidates
+            return candidates
         # 現在のゾーンで次ターン待機可能か確認
         if reservations.can_use_zone(zone_name, next_turn):
             candidates.append((zone_name, next_turn))
@@ -136,7 +136,7 @@ class ReservationPathFinder:
                     )
             ):
                 candidates.append((neighbor_name, arrival_turn))
-         
+
         return candidates
 
     def _reconstruct_path(
