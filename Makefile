@@ -2,7 +2,7 @@ UV := uv
 MAP ?= sample_map.txt
 .DEFAULT_GOAL := help
 
-.PHONY: install run visual debug clean lint lint-strict test help
+.PHONY: install run visual debug clean lint lint-strict help
 
 # Map files must be supplied as MAP=path.  Without this check, Make treats a
 # positional path as another target and may silently run sample_map.txt.
@@ -37,8 +37,8 @@ clean:
 	rm -f .coverage .coverage.*
 
 lint:
-	$(UV) run flake8 *.py tests
-	$(UV) run mypy *.py tests \
+	$(UV) run flake8 *.py
+	$(UV) run mypy . \
 		--warn-return-any \
 		--warn-unused-ignores \
 		--ignore-missing-imports \
@@ -46,11 +46,8 @@ lint:
 		--check-untyped-defs
 
 lint-strict:
-	$(UV) run flake8 *.py tests
-	$(UV) run mypy *.py tests --strict
-
-test:
-	$(UV) run pytest -q
+	$(UV) run flake8 *.py
+	$(UV) run mypy . --strict
 
 help:
 	@echo "make install          Install project and development dependencies"
@@ -60,5 +57,4 @@ help:
 	@echo "make debug MAP=path   Run under pdb"
 	@echo "make lint             Run required flake8 and mypy checks"
 	@echo "make lint-strict      Run flake8 and mypy --strict"
-	@echo "make test             Run the test suite"
 	@echo "make clean            Remove generated caches and build files"

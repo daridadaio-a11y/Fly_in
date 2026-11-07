@@ -91,7 +91,6 @@ Visualizer controls:
 ### Development commands
 
 ```bash
-make test
 make lint
 make lint-strict
 make debug MAP=sample_map.txt
@@ -200,7 +199,6 @@ end hub.
 - `simulation.py`: per-turn state generation and required output
 - `visualizer.py`: Pygame event loop and turn playback controls
 - `renderer.py`: scalable drawing of connections, zones, drones, and status
-- `tests/`: parser, pathfinding, reservation, simulation, and map tests
 
 ## Design decisions and limitations
 
@@ -210,8 +208,8 @@ end hub.
 - Waiting is represented by repeating the same zone on the next turn.
 - Planning one drone at a time keeps the implementation understandable and
   deterministic, but the result is not guaranteed to be globally optimal.
-- The graphical view animates discrete turn states rather than continuously
-  interpolating each drone's position between two zones.
+- The graphical view smoothly interpolates each drone's position between
+  consecutive discrete turn states.
 
 ## Resources
 

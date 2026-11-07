@@ -15,7 +15,7 @@ def main() -> int:
     """
     visual_mode = False
 
-    if len(sys.argv) == 2:
+    if len(sys.argv) == 2 and not sys.argv[1].startswith("-"):
         file_path = sys.argv[1]
     elif len(sys.argv) == 3 and sys.argv[1] == "--visual":
         visual_mode = True

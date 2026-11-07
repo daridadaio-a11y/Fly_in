@@ -112,7 +112,7 @@ class Visualizer:
             (WIDTH, HEIGHT),
             pygame.RESIZABLE,
         )
-        pygame.display.set_caption("疲れたよパトラッシュ")
+        pygame.display.set_caption("二ヶ月かかりました。落とさないでくださいorz")
         # フレームレートの制御
         clock = pygame.time.Clock()
         renderer = Renderer(self.graph)

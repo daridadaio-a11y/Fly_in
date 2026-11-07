@@ -31,6 +31,7 @@ dist/
 # Project-local temporary and discarded files
 tmp/
 ゴミ/
+tests/
 AGENTS.md
 development_checklist.md
 fly_in_drones_translation.pdf

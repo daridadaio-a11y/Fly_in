@@ -6,6 +6,9 @@ dependencies = [
     "pygame>=2.6.1",
 ]
 
+[tool.mypy]
+exclude_gitignore = true
+
 [dependency-groups]
 dev = [
     "flake8>=7.4.0,<7.5.0",
